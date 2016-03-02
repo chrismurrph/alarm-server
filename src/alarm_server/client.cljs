@@ -1,7 +1,4 @@
 (ns alarm-server.client
-  "Official Sente reference example: client"
-  {:author "Peter Taoussanis (@ptaoussanis)"}
-
   (:require
    [clojure.string  :as str]
    [cljs.core.async :as async  :refer (<! >! put! chan)]

@@ -20,9 +20,11 @@
   :plugins
   [[lein-pprint "1.1.2"]
    [lein-ancient "0.6.8"]
-   [com.cemerick/austin "0.1.6"]
+   ;[com.cemerick/austin "0.1.6"]
    [lein-cljsbuild "1.1.2"]
    ]
+
+  :profiles {:uberjar {:aot :all}}
 
   :cljsbuild
   {:builds
@@ -32,12 +34,19 @@
                     :optimizations :whitespace #_:advanced
                     :pretty-print  true}}]}
 
+  ;:aot [alarm-server.core]
   :main alarm-server.core
 
   :aliases
   {"start-repl" ["do" "cljsbuild" "once," "repl" ":headless"]
-   "start"      ["do" "cljsbuild" "once," "run"]}
+   "start"      ["do" "cljsbuild" "once," "run"]
+   "uber"      ["do" "clean," "cljsbuild" "once," "uberjar"]}
 
-  :target-path "target/%s"
-  ;:profiles {:uberjar {:aot :all}}
+  ;:target-path "target/%s"
+  :uberjar-name "alarm-server.jar"
+  :omit-source true
+  :manifest {"Class-Path" "../lib/upper.jar"}
+
+  ;:repositories
+  ;{"sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"}
   )

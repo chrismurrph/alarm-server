@@ -1,6 +1,7 @@
 (ns alarm-server.core
-  "Official Sente reference example: server"
-  {:author "Peter Taoussanis (@ptaoussanis)"}
+  (:gen-class)
+
+  (import alarm_server.Upper)
 
   (:require
     [clojure.string     :as str]
@@ -157,6 +158,8 @@
 
 (comment (test-fast-server>user-pushes))
 
+(def upperObj (Upper.))
+
 ;;;; Init stuff
 
 (defonce    web-server_ (atom nil)) ; {:server _ :port _ :stop-fn (fn [])}
@@ -168,7 +171,7 @@
                                     (or port 0) ; 0 => auto (any available) port
                                     )
         uri (format "http://localhost:%s/" port)]
-    (infof "Web server is running at `%s`" uri)
+    (infof (.upper upperObj "Web server is running at `%s`") uri)
     (try
       (.browse (java.awt.Desktop/getDesktop) (java.net.URI. uri))
       (catch java.awt.HeadlessException _))
