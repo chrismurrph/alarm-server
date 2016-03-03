@@ -1,9 +1,9 @@
 (ns alarm-server.core
   (:gen-class)
 
-  (import alarm_server.GraphLineServer
-          (alarm_server Utils SeaLogger)
-          (java.util Date))
+  (import (alarm_server GraphLineServer Utils SeaLogger)
+          (java.util Date HashMap)
+          (com.cmts.server.business SmartgasServer))
 
   (:require
     [clojure.string     :as str]
@@ -124,6 +124,8 @@
     (debugf "Ignoring event: %s" event)))
 
 (def javaObj (GraphLineServer.))
+(def java-hash-map (HashMap.))
+(def server (SmartgasServer. java-hash-map))
 
 (defn get-points [?data]
   (let [{:keys [start-time-str end-time-str metric-name display-name]} ?data

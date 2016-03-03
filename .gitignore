@@ -4,3 +4,7 @@ figwheel_server.log
 *.iml
 target/
 *.class
+myrepo/
+lib/
+main.js
+

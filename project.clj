@@ -16,6 +16,11 @@
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.237"]
                  [com.test/points "1.0.1"]
+                 [com.seasoft/sc-server "1.0.1"]
+                 [com.seasoft/sc-hicommon "1.0.1"]
+                 [com.seasoft/developer "1.0.1"]
+                 [com.seasoft/at-common "2.11"]
+                 [com.seasoft/quartz "1.8.3"]
                  ]
 
   :plugins
@@ -41,12 +46,12 @@
   :aliases
   {"start-repl" ["do" "cljsbuild" "once," "repl" ":headless"]
    "start"      ["do" "cljsbuild" "once," "run"]
-   "uber"      ["do" "clean," "cljsbuild" "once," "uberjar," "run"]}
+   "uber"      ["do" "clean," "cljsbuild" "once," "uberjar"]}
 
   ;:target-path "target/%s"
   :uberjar-name "alarm-server.jar"
   :omit-source true
-  :manifest {"Class-Path" "../lib/upper.jar"}
+  :manifest {"Class-Path" "../lib/points.jar ../lib/at-common_2.11.jar ../lib/SC-HiCommon.jar ../lib/SC-Server.jar"}
 
   :repositories [["localrepo1" {:url "file:///C:/dev/alarm-server/myrepo"
                                 :username :env/localrepo_username
