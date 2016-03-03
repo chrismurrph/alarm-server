@@ -103,7 +103,12 @@
   (.addEventListener target-el "click"
     (fn [ev]
       (->output! "Button 2 was clicked (will receive reply from server)")
-      (chsk-send! [:example/button2 {:had-a-callback? "indeed"}] 5000
+      (chsk-send! 
+        [:example/points 
+         {:start-time-str "21_08_2010__09_08_02.948"
+          :end-time-str "21_08_2010__09_10_36.794"
+          :metric-name "Oxygen"
+          :display-name "Greens Garage"}] 5000
         (fn [cb-reply] (->output! "Callback reply: %s" cb-reply))))))
 
 (when-let [target-el (.getElementById js/document "btn-login")]

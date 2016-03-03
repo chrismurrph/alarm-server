@@ -1,7 +1,9 @@
 (ns alarm-server.core
   (:gen-class)
 
-  (import alarm_server.Upper)
+  (import alarm_server.GraphLineServer
+          (alarm_server Utils SeaLogger)
+          (java.util Date))
 
   (:require
     [clojure.string     :as str]
@@ -110,9 +112,38 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [session (:session ring-req)
         uid     (:uid     session)]
-    (debugf "Unhandled event: %s" event)
+    (debugf "Unhandled event: %s, id: %s" event id)
     (when ?reply-fn
       (?reply-fn {:umatched-event-as-echoed-from-from-server event}))))
+
+(defmethod -event-msg-handler
+  :chsk/ws-ping 
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [session (:session ring-req)
+        uid     (:uid     session)]
+    (debugf "Ignoring event: %s" event)))
+
+(def javaObj (GraphLineServer.))
+
+(defn get-points [?data]
+  (let [{:keys [start-time-str end-time-str metric-name display-name]} ?data
+        ;startTimeStr "21_08_2010__09_08_02.948"
+        ;endTimeStr "21_08_2010__09_10_36.794"
+        ;metricName "Oxygen"
+        ;displayName "Greens Garage"
+        res (.requestGraphLine javaObj start-time-str end-time-str 
+                               (Utils/formList metric-name)
+                               display-name (SeaLogger/format (Date.)) nil)]
+    res))
+
+(defmethod -event-msg-handler
+  :example/points
+  [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
+  (let [session (:session ring-req)
+        uid     (:uid     session)]
+    (debugf "points: %s" ?data)
+    (when ?reply-fn
+      (?reply-fn {:some-reply (get-points ?data)}))))
 
 ;; TODO Add your (defmethod -event-msg-handler <event-id> [ev-msg] <body>)s here...
 
@@ -158,8 +189,6 @@
 
 (comment (test-fast-server>user-pushes))
 
-(def upperObj (Upper.))
-
 ;;;; Init stuff
 
 (defonce    web-server_ (atom nil)) ; {:server _ :port _ :stop-fn (fn [])}
@@ -171,7 +200,7 @@
                                     (or port 0) ; 0 => auto (any available) port
                                     )
         uri (format "http://localhost:%s/" port)]
-    (infof (.upper upperObj "Web server is running at `%s`") uri)
+    (infof "Web server is running at `%s`" uri)
     (try
       (.browse (java.awt.Desktop/getDesktop) (java.net.URI. uri))
       (catch java.awt.HeadlessException _))

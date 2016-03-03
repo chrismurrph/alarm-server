@@ -19,7 +19,7 @@
 
   :plugins
   [[lein-pprint "1.1.2"]
-   [lein-ancient "0.6.8"]
+   ;[lein-ancient "0.6.8"]
    ;[com.cemerick/austin "0.1.6"]
    [lein-cljsbuild "1.1.2"]
    ]
@@ -40,7 +40,7 @@
   :aliases
   {"start-repl" ["do" "cljsbuild" "once," "repl" ":headless"]
    "start"      ["do" "cljsbuild" "once," "run"]
-   "uber"      ["do" "clean," "cljsbuild" "once," "uberjar"]}
+   "uber"      ["do" "clean," "cljsbuild" "once," "uberjar," "run"]}
 
   ;:target-path "target/%s"
   :uberjar-name "alarm-server.jar"
