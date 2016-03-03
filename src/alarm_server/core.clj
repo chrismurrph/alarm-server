@@ -131,7 +131,7 @@
         ;endTimeStr "21_08_2010__09_10_36.794"
         ;metricName "Oxygen"
         ;displayName "Greens Garage"
-        res (.requestGraphLine javaObj start-time-str end-time-str 
+        res (.requestGraphLine javaObj start-time-str end-time-str
                                (Utils/formList metric-name)
                                display-name (SeaLogger/format (Date.)) nil)]
     res))
@@ -141,7 +141,7 @@
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [session (:session ring-req)
         uid     (:uid     session)]
-    (debugf "points: %s" ?data)
+    (debugf "points: %s\n" ?data)
     (when ?reply-fn
       (?reply-fn {:some-reply (get-points ?data)}))))
 

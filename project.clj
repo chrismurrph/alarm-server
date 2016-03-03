@@ -15,6 +15,7 @@
                  [compojure "1.4.0"]                        ; Or routing lib of your choice
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.237"]
+                 [com.test/points "1.0.1"]
                  ]
 
   :plugins
@@ -47,6 +48,9 @@
   :omit-source true
   :manifest {"Class-Path" "../lib/upper.jar"}
 
+  :repositories [["localrepo1" {:url "file:///C:/dev/alarm-server/myrepo"
+                                :username :env/localrepo_username
+                                :password :env/localrepo_password}]]
   ;:repositories
   ;{"sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"}
   )

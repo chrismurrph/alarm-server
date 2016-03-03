@@ -40,18 +40,6 @@ public class GraphLineServer implements RequestGraphLineServiceI
         result.gasNames.add( "Methane");
         result.setCountInEach( 1);
         result.gasGraphLines.put( "Methane", line);
-        /*
-        return smartgasServer.getUserReadDoActivity().assembleGraphLine
-        (
-            startTimeStr,
-            endTimeStr,
-            substancesNames,
-            displayName,
-            displayTimeStr,
-            smartgasServer.getSessionDataStore( sessionId),
-            smartgasServer.getLastRedundantCommitTime()
-        );
-        */
         Err.pr("To RET (in Java) " + result);
         return result;
     }

@@ -1,0 +1,1 @@
+lein deploy localrepo1 com.test/points 1.0.1 ./lib/points.jar
