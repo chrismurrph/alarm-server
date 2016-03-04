@@ -1,6 +1,6 @@
 (defproject alarm-server "0.1.0-SNAPSHOT"
   :description "Server for om-alarming. Intended to not work unless you have the right jar files"
-  :url "http://example.com/FIXME"
+  :url "http://seasoft.com"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
