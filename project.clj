@@ -15,12 +15,55 @@
                  [compojure "1.4.0"]                        ; Or routing lib of your choice
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.237"]
-                 [com.test/points "1.0.1"]
-                 [com.seasoft/sc-server "1.0.1"]
-                 [com.seasoft/sc-hicommon "1.0.1"]
-                 [com.seasoft/developer "1.0.1"]
-                 [com.seasoft/at-common "2.11"]
-                 [com.seasoft/quartz "1.8.3"]
+                 ;[com.test/points "1.0.1"]
+                 ;[com.seasoft/sc-server "1.0.1"]
+                 ;[com.seasoft/sc-hicommon "1.0.1"]
+                 ;[com.seasoft/developer "1.0.1"]
+                 ;[com.seasoft/at-common "2.11"]
+                 ;[com.seasoft/quartz "1.8.3"]
+                 [local/Developer "1.0"]
+                 [local/JEasyResources "1.0"]
+                 [local/JEasyWeb "1.0"]
+                 [local/RXTXcomm "1.0"]
+                 [local/SC-Customer "1.0"]
+                 [local/SC-HiCommon "1.0"]
+                 [local/SC-MyRegisterDriver "1.0"]
+                 [local/SC-Server "1.0"]
+                 [local/akka-actor_2.11-2.3.9 "1.0"]
+                 [local/akka-remote_2.11-2.3.9 "1.0"]
+                 [local/aopalliance "1.0"]
+                 [local/ashwood-2.0 "1.0"]
+                 [local/at-common_2.11 "1.0"]
+                 [local/cayenne-server-3.0 "1.0"]
+                 [local/commons-collections-3.1 "1.0"]
+                 [local/commons-logging-1.1.3 "1.0"]
+                 [local/config-1.2.1 "1.0"]
+                 [local/joda-time-2.4 "1.0"]
+                 [local/log4j-1.2.16 "1.0"]
+                 [local/mysql-connector-java-3.0.15-ga-bin "1.0"]
+                 [local/netty-3.9.8.Final "1.0"]
+                 [local/opiOpcIO "1.0"]
+                 [local/points "1.0"]
+                 [local/protobuf-java-2.5.0 "1.0"]
+                 [local/quartz-1.8.3 "1.0"]
+                 [local/scala-library-2.11.6 "1.0"]
+                 [local/seroUtils "1.0"]
+                 [local/slf4j-api-1.6.1 "1.0"]
+                 [local/slf4j-log4j12-1.6.1 "1.0"]
+                 [local/spring-aop-3.2.8.RELEASE "1.0"]
+                 [local/spring-beans-3.2.8.RELEASE "1.0"]
+                 [local/spring-context-3.2.8.RELEASE "1.0"]
+                 [local/spring-core-3.2.8.RELEASE "1.0"]
+                 [local/spring-expression-3.2.8.RELEASE "1.0"]
+                 [local/spring-jdbc-3.2.8.RELEASE "1.0"]
+                 [local/spring-security-config-3.2.5.RELEASE "1.0"]
+                 [local/spring-security-core-3.2.5.RELEASE "1.0"]
+                 [local/spring-security-remoting-3.2.5.RELEASE "1.0"]
+                 [local/spring-security-web-3.2.5.RELEASE "1.0"]
+                 [local/spring-tx-3.2.8.RELEASE "1.0"]
+                 [local/spring-web-3.2.8.RELEASE "1.0"]
+                 [local/spring-webmvc-3.2.8.RELEASE "1.0"]
+                 [local/velocity-1.3 "1.0"]
                  ]
 
   :plugins
@@ -46,14 +89,15 @@
   :aliases
   {"start-repl" ["do" "cljsbuild" "once," "repl" ":headless"]
    "start"      ["do" "cljsbuild" "once," "run"]
-   "uber"      ["do" "clean," "cljsbuild" "once," "uberjar"]}
+   "uber"       ["do" "clean," "cljsbuild" "once," "uberjar"]}
 
   ;:target-path "target/%s"
   :uberjar-name "alarm-server.jar"
   :omit-source true
   :manifest {"Class-Path" "../lib/points.jar ../lib/at-common_2.11.jar ../lib/SC-HiCommon.jar ../lib/SC-Server.jar"}
 
-  :repositories [["localrepo1" {:url "file:///C:/dev/alarm-server/myrepo"
+  :repositories [["localrepo1" {;:url "file:///C:/dev/alarm-server/myrepo"
+                                :url "file:///home/chris/IdeaProjects/alarm-server"
                                 :username :env/localrepo_username
                                 :password :env/localrepo_password}]]
   ;:repositories
