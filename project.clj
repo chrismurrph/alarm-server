@@ -67,6 +67,8 @@
    [lein-cljsbuild "1.1.2"]
    ]
 
+  :pom-plugins [[org.apache.maven.plugins/maven-shade-plugin 2.2]]
+
   :profiles {:uberjar {:aot :all}}
 
   :cljsbuild
@@ -138,9 +140,13 @@
   ;            ../lib/spring-tx-3.2.8.RELEASE.jar
   ;            ../lib/spring-web-3.2.8.RELEASE.jar
   ;            ../lib/spring-webmvc-3.2.8.RELEASE.jar
-  ;            ../lib/velocity-1.3.jar
-  ;            ../lib/commons-codec-1.10.jar"
+  ;            ../lib/velocity-1.3.jar"
   ;            }
+
+  ;; Was having to put these in above, clojure.core.async.Mutex was to be the next one
+  ;; ../lib/commons-codec-1.10.jar
+  ;; ../lib/commons-fileupload-1.3.1.jar
+  ;;
 
   :repositories [["localrepo1" {;:url "file:///C:/dev/alarm-server"
                                 :url "file:///home/chris/IdeaProjects/alarm-server"
