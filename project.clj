@@ -87,62 +87,63 @@
    }
 
   :target-path "target"
-  :jar-name "alarm-server.jar"
+  ;:jar-name "alarm-server.jar"
   :uberjar-name "alarm-server.jar"
   :omit-source true
   ;:manifest {"Class-Path"
-  ;           "../lib/points.jar    
+  ;           "../lib/points.jar
   ;            ../lib/clojure-1.8.0.jar
   ;            ../lib/at-common_2.11.jar
   ;            ../lib/SC-HiCommon.jar
   ;            ../lib/SC-Server.jar
-  ;            ../lib/Developer.jar 
-  ;            ../lib/JEasyResources.jar 
+  ;            ../lib/Developer.jar
+  ;            ../lib/JEasyResources.jar
   ;            ../lib/JEasyWeb.jar
   ;            ../lib/RXTXcomm.jar
-  ;            ../lib/SC-Customer.jar 
+  ;            ../lib/SC-Customer.jar
   ;            ../lib/SC-HiCommon.jar
-  ;            ../lib/SC-MyRegisterDriver.jar 
+  ;            ../lib/SC-MyRegisterDriver.jar
   ;            ../lib/SC-Server.jar
-  ;            ../lib/akka-actor_2.11-2.3.9.jar 
-  ;            ../lib/akka-remote_2.11-2.3.9.jar 
+  ;            ../lib/akka-actor_2.11-2.3.9.jar
+  ;            ../lib/akka-remote_2.11-2.3.9.jar
   ;            ../lib/aopalliance.jar
   ;            ../lib/ashwood-2.0.jar
-  ;            ../lib/at-common_2.11.jar 
-  ;            ../lib/cayenne-server-3.0.jar 
-  ;            ../lib/commons-collections-3.1.jar 
-  ;            ../lib/commons-logging-1.1.3.jar 
-  ;            ../lib/config-1.2.1.jar 
-  ;            ../lib/joda-time-2.4.jar 
-  ;            ../lib/log4j-1.2.16.jar 
-  ;            ../lib/mysql-connector-java-3.0.15-ga-bin.jar 
-  ;            ../lib/netty-3.9.8.Final.jar 
-  ;            ../lib/opiOpcIO.jar 
-  ;            ../lib/points.jar 
-  ;            ../lib/protobuf-java-2.5.0.jar 
-  ;            ../lib/quartz-1.8.3.jar 
-  ;            ../lib/scala-library-2.11.6.jar 
-  ;            ../lib/seroUtils.jar 
-  ;            ../lib/slf4j-api-1.6.1.jar 
-  ;            ../lib/slf4j-log4j12-1.6.1.jar 
-  ;            ../lib/spring-aop-3.2.8.RELEASE.jar 
-  ;            ../lib/spring-beans-3.2.8.RELEASE.jar 
-  ;            ../lib/spring-context-3.2.8.RELEASE.jar 
-  ;            ../lib/spring-core-3.2.8.RELEASE.jar 
-  ;            ../lib/spring-expression-3.2.8.RELEASE.jar 
-  ;            ../lib/spring-jdbc-3.2.8.RELEASE.jar 
-  ;            ../lib/spring-security-config-3.2.5.RELEASE.jar 
-  ;            ../lib/spring-security-core-3.2.5.RELEASE.jar 
-  ;            ../lib/spring-security-remoting-3.2.5.RELEASE.jar 
-  ;            ../lib/spring-security-web-3.2.5.RELEASE.jar 
-  ;            ../lib/spring-tx-3.2.8.RELEASE.jar 
-  ;            ../lib/spring-web-3.2.8.RELEASE.jar 
-  ;            ../lib/spring-webmvc-3.2.8.RELEASE.jar 
-  ;            ../lib/velocity-1.3.jar"
+  ;            ../lib/at-common_2.11.jar
+  ;            ../lib/cayenne-server-3.0.jar
+  ;            ../lib/commons-collections-3.1.jar
+  ;            ../lib/commons-logging-1.1.3.jar
+  ;            ../lib/config-1.2.1.jar
+  ;            ../lib/joda-time-2.4.jar
+  ;            ../lib/log4j-1.2.16.jar
+  ;            ../lib/mysql-connector-java-3.0.15-ga-bin.jar
+  ;            ../lib/netty-3.9.8.Final.jar
+  ;            ../lib/opiOpcIO.jar
+  ;            ../lib/points.jar
+  ;            ../lib/protobuf-java-2.5.0.jar
+  ;            ../lib/quartz-1.8.3.jar
+  ;            ../lib/scala-library-2.11.6.jar
+  ;            ../lib/seroUtils.jar
+  ;            ../lib/slf4j-api-1.6.1.jar
+  ;            ../lib/slf4j-log4j12-1.6.1.jar
+  ;            ../lib/spring-aop-3.2.8.RELEASE.jar
+  ;            ../lib/spring-beans-3.2.8.RELEASE.jar
+  ;            ../lib/spring-context-3.2.8.RELEASE.jar
+  ;            ../lib/spring-core-3.2.8.RELEASE.jar
+  ;            ../lib/spring-expression-3.2.8.RELEASE.jar
+  ;            ../lib/spring-jdbc-3.2.8.RELEASE.jar
+  ;            ../lib/spring-security-config-3.2.5.RELEASE.jar
+  ;            ../lib/spring-security-core-3.2.5.RELEASE.jar
+  ;            ../lib/spring-security-remoting-3.2.5.RELEASE.jar
+  ;            ../lib/spring-security-web-3.2.5.RELEASE.jar
+  ;            ../lib/spring-tx-3.2.8.RELEASE.jar
+  ;            ../lib/spring-web-3.2.8.RELEASE.jar
+  ;            ../lib/spring-webmvc-3.2.8.RELEASE.jar
+  ;            ../lib/velocity-1.3.jar
+  ;            ../lib/commons-codec-1.10.jar"
   ;            }
 
-  :repositories [["localrepo1" {:url "file:///C:/dev/alarm-server"
-                                ;:url "file:///home/chris/IdeaProjects/alarm-server"
+  :repositories [["localrepo1" {;:url "file:///C:/dev/alarm-server"
+                                :url "file:///home/chris/IdeaProjects/alarm-server"
                                 :username :env/localrepo_username
                                 :password :env/localrepo_password}]]
   ;:repositories
