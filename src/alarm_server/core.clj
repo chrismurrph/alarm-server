@@ -1,7 +1,7 @@
 (ns alarm-server.core
   (:gen-class)
 
-  (import (alarm_server GraphLineServer Utils SeaLogger)
+  (import (alarm_server Utils SeaLogger)
           (java.util Date HashMap)
           (com.cmts.server.business SmartgasServer))
 
@@ -123,9 +123,9 @@
         uid     (:uid     session)]
     (debugf "Ignoring event: %s" event)))
 
-(def javaObj (GraphLineServer.))
-(def java-hash-map (HashMap.))
-(def server (SmartgasServer. java-hash-map))
+(defonce smartgas_ (atom nil))
+(defn start-smartgas []
+  (reset! smartgas_ (SmartgasServer. (HashMap.))))
 
 (defn get-points [?data]
   (let [{:keys [start-time-str end-time-str metric-name display-name]} ?data
@@ -133,7 +133,7 @@
         ;endTimeStr "21_08_2010__09_10_36.794"
         ;metricName "Oxygen"
         ;displayName "Greens Garage"
-        res (.requestGraphLine javaObj start-time-str end-time-str
+        res (.requestGraphLine @smartgas_ start-time-str end-time-str
                                (Utils/formList metric-name)
                                display-name (SeaLogger/format (Date.)) nil)]
     res))
@@ -211,6 +211,7 @@
 (defn stop!  []  (stop-router!)  (stop-web-server!))
 (defn start! [] (start-router!) (start-web-server!)
   ;(start-example-broadcaster!)
+  (start-smartgas)
   )
 ;; (defonce _start-once (start!))
 
