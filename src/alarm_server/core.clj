@@ -1,10 +1,10 @@
 (ns alarm-server.core
   (:gen-class)
 
-  (import (alarm_server Utils SeaLogger)
-          (java.util Date HashMap)
-          (com.cmts.server.business SmartgasServer GraphLineServer UserDetailsServer SmartgasUtils)
-          (com.seasoft.alarmer.common.domain DomainSession))
+  (import (java.util Date HashMap)
+          (com.cmts.server.business SmartgasServer GraphLineServer UserDetailsServer)
+          (com.seasoft.alarmer.common.domain DomainSession)
+          (com.seasoft.common.utils Utils SeaLogger))
 
   (:require
     [clojure.string     :as str]
@@ -20,7 +20,8 @@
     [org.httpkit.server :as http-kit]
     [taoensso.sente.server-adapters.http-kit :refer (sente-web-server-adapter)]
     ;; Optional, for Transit encoding:
-    [taoensso.sente.packers.transit :as sente-transit]))
+    ;[taoensso.sente.packers.transit :as sente-transit]
+    [alarm-server.util :as u]))
 
 (defn start-selected-web-server! [ring-handler port]
   (infof "Starting http-kit...")
@@ -114,20 +115,28 @@
 
 (defn multigas->out [multigasReqDO]
   (let [gas-names (into [] (.getGasNamesList multigasReqDO))
-        _ (debugf "gas names: %s\n" gas-names)
+        ;_ (debugf "gas names: %s\n" gas-names)
+        ;_ (assert (= 1 (count gas-names)) "Expect client to only ask for one gas name at a time")
         graph-line (first (map #(.getGraphLine multigasReqDO %) gas-names))
-        _ (debugf "graph-line: %s\n" graph-line)
-        _ (debugf "graph-line size: %s\n" (.size graph-line))
-        points (mapv #(.getGraphPoint graph-line %) (range (.size graph-line)))]
-    points))
+        ;_ (debugf "graph-line: %s\n" graph-line)
+        ;_ (debugf "graph-line size: %s\n" (.size graph-line))
+        ]
+    (map #(.getGraphPoint graph-line %) (range (.size graph-line)))))
+
+;(defn points->data [points]
+;  (debugf "points: %s" points)
+;  (mapv bean points))
 
 (defn get-points [?data session]
   (let [{:keys [start-time-str end-time-str metric-name display-name]} ?data
         multigasReqDO (.requestGraphLine @graph-line_ start-time-str end-time-str
-                               (Utils/formList metric-name)
-                               display-name (SeaLogger/format (Date.)) session)
+                                         (Utils/formList metric-name)
+                                         display-name (SeaLogger/format (Date.)) session)
         ]
-    (multigas->out multigasReqDO)))
+    (as-> multigasReqDO $
+          (multigas->out $)
+          (map bean $)
+          (map #(u/unselect-keys % [:class]) $))))
 
 (defn authenticate [user-id pass-id]
   (let [res (.getUserDetails (.getUserDetails @user-details_ user-id (.getRoleEnumCRO @role-factory_) "web" false))]
@@ -151,7 +160,7 @@
   [ring-req]
   (let [{:keys [session params]} ring-req
         {:keys [user-id pass-id]} params
-        _ ("Abt to authenticate %s" user-id)
+        _ (debugf "Abt to authenticate %s" user-id)
         res (authenticate user-id pass-id)]
     (debugf "Login request: %s" params)
     ;(let [resp (.getUserDetails @user-details_ nil nil nil nil)])
@@ -225,13 +234,13 @@
   (stop-web-server!)
   (let [{:keys [stop-fn port] :as server-map}
         (start-selected-web-server! (var main-ring-handler)
-                                    (or port 0) ; 0 => auto (any available) port
+                                    (or port 8081) ; 0 => auto (any available) port
                                     )
         uri (format "http://localhost:%s/" port)]
     (infof "Web server is running at `%s`" uri)
-    (try
-      (.browse (java.awt.Desktop/getDesktop) (java.net.URI. uri))
-      (catch java.awt.HeadlessException _))
+    ;(try
+    ;  (.browse (java.awt.Desktop/getDesktop) (java.net.URI. uri))
+    ;  (catch java.awt.HeadlessException _))
     (reset! web-server_ server-map)))
 
 (defn stop!  []  (stop-router!)  (stop-web-server!))

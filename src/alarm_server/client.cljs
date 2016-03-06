@@ -105,14 +105,14 @@
       (->output! "Button 2 was clicked (will receive reply from server)")
       (chsk-send! 
         [:example/points 
-         {:start-time-str "21_12_2015__09_08_02.948"
+         {:start-time-str "01_03_2016__09_08_02.948"
           :end-time-str "07_03_2016__09_10_36.794"
           :metric-name "Oxygen"
           :display-name "Shed Tube 10"}] 5000
         (fn [cb-reply] (->output! "Callback reply: %s" cb-reply))))))
 
 (defn authentication? [ajax-resp]
-  (-> ->output! "Assuming ok, but got back: %s" ajax-resp)
+  (->output! "Assuming ok, but got back: %s" ajax-resp)
   true)
 
 (when-let [target-el (.getElementById js/document "btn-login")]
