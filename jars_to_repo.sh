@@ -1,7 +1,7 @@
 #!/bin/sh
 export LOCALREPO_USERNAME=
 export LOCALREPO_PASSWORD=
-for file in lib/*.jar
+for file in from/*.jar
 do
     name=$(basename "$file")
     basename=${name%.jar}

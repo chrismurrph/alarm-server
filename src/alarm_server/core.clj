@@ -62,7 +62,7 @@
     [:p  "The server can use this id to send events to *you* specifically."]
     [:p
      [:input#input-user-login {:type :text :placeholder "User-id"}]
-     [:input#input-pass-login {:type :text :placeholder "Pass-id"}]
+     ;[:input#input-pass-login {:type :text :placeholder "Pass-id"}]
      [:button#btn-login {:type "button"} "Secure login!"]]
     ;;
     [:hr]
@@ -151,6 +151,7 @@
   [ring-req]
   (let [{:keys [session params]} ring-req
         {:keys [user-id pass-id]} params
+        _ ("Abt to authenticate %s" user-id)
         res (authenticate user-id pass-id)]
     (debugf "Login request: %s" params)
     ;(let [resp (.getUserDetails @user-details_ nil nil nil nil)])
