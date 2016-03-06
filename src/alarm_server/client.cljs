@@ -105,16 +105,21 @@
       (->output! "Button 2 was clicked (will receive reply from server)")
       (chsk-send! 
         [:example/points 
-         {:start-time-str "21_08_2010__09_08_02.948"
-          :end-time-str "21_08_2010__09_10_36.794"
+         {:start-time-str "21_12_2015__09_08_02.948"
+          :end-time-str "07_03_2016__09_10_36.794"
           :metric-name "Oxygen"
-          :display-name "Greens Garage"}] 5000
+          :display-name "Shed Tube 10"}] 5000
         (fn [cb-reply] (->output! "Callback reply: %s" cb-reply))))))
+
+(defn authentication? [ajax-resp]
+  (-> ->output! "Assuming ok, but got back: %s" ajax-resp)
+  true)
 
 (when-let [target-el (.getElementById js/document "btn-login")]
   (.addEventListener target-el "click"
     (fn [ev]
-      (let [user-id (.-value (.getElementById js/document "input-login"))]
+      (let [user-id (.-value (.getElementById js/document "input-user-login"))
+            pass-id (.-value (.getElementById js/document "input-pass-login"))]
         (if (str/blank? user-id)
           (js/alert "Please enter a user-id first")
           (do
@@ -128,11 +133,11 @@
             (sente/ajax-lite "/login"
               {:method :post
                :headers {:X-CSRF-Token (:csrf-token @chsk-state)}
-               :params  {:user-id (str user-id)}}
+               :params  {:user-id (str user-id) :pass-id (str pass-id)}}
 
               (fn [ajax-resp]
                 (->output! "Ajax login response: %s" ajax-resp)
-                (let [login-successful? true ; Your logic here
+                (let [login-successful? (authentication? ajax-resp) ; Your logic here
                       ]
                   (if-not login-successful?
                     (->output! "Login failed")

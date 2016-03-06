@@ -3,7 +3,8 @@
 
   (import (alarm_server Utils SeaLogger)
           (java.util Date HashMap)
-          (com.cmts.server.business SmartgasServer))
+          (com.cmts.server.business SmartgasServer GraphLineServer UserDetailsServer SmartgasUtils)
+          (com.seasoft.alarmer.common.domain DomainSession))
 
   (:require
     [clojure.string     :as str]
@@ -60,7 +61,8 @@
     [:h2 "Step 3: try login with a user-id"]
     [:p  "The server can use this id to send events to *you* specifically."]
     [:p
-     [:input#input-login {:type :text :placeholder "User-id"}]
+     [:input#input-user-login {:type :text :placeholder "User-id"}]
+     [:input#input-pass-login {:type :text :placeholder "Pass-id"}]
      [:button#btn-login {:type "button"} "Secure login!"]]
     ;;
     [:hr]
@@ -68,32 +70,6 @@
     [:p "Hit your browser's reload/refresh button"]
     [:script {:src "main.js"}] ; Include our cljs target
     ))
-
-(defn login-handler
-  "Here's where you'll add your server-side login/auth procedure (Friend, etc.).
-  In our simplified example we'll just always successfully authenticate the user
-  with whatever user-id they provided in the auth request."
-  [ring-req]
-  (let [{:keys [session params]} ring-req
-        {:keys [user-id]} params]
-    (debugf "Login request: %s" params)
-    {:status 200 :session (assoc session :uid user-id)}))
-
-(defroutes ring-routes
-           (GET  "/"      ring-req (landing-pg-handler            ring-req))
-           (GET  "/chsk"  ring-req (ring-ajax-get-or-ws-handshake ring-req))
-           (POST "/chsk"  ring-req (ring-ajax-post                ring-req))
-           (POST "/login" ring-req (login-handler                 ring-req))
-           (route/resources "/") ; Static files, notably public/main.js (our cljs target)
-           (route/not-found "<h1>Page not found</h1>"))
-
-(def main-ring-handler
-  "**NB**: Sente requires the Ring `wrap-params` + `wrap-keyword-params`
-  middleware to work. These are included with
-  `ring.middleware.defaults/wrap-defaults` - but you'll need to ensure
-  that they're included yourself if you're not using `wrap-defaults`."
-  (ring.middleware.defaults/wrap-defaults
-    ring-routes ring.middleware.defaults/site-defaults))
 
 ;;;; Sente event handlers
 
@@ -123,33 +99,82 @@
         uid     (:uid     session)]
     (debugf "Ignoring event: %s" event)))
 
+(defonce domain-factory_ (atom nil))
+(defonce role-factory_ (atom nil))
 (defonce smartgas_ (atom nil))
-(defn start-smartgas []
-  (reset! smartgas_ (SmartgasServer. (HashMap.))))
+(defonce graph-line_ (atom nil))
+(defonce user-details_ (atom nil))
+(defn start-smartgas-servers []
+  (reset! domain-factory_ (DomainSession/getDomainFactoryInstance))
+  (reset! role-factory_ (DomainSession/getRoleEnumFactoryInstance))
+  (reset! smartgas_ (SmartgasServer. (HashMap.)))
+  (reset! graph-line_ (GraphLineServer. @smartgas_))
+  (reset! user-details_ (UserDetailsServer. @smartgas_))
+  )
 
-(defn get-points [?data]
+(defn multigas->out [multigasReqDO]
+  (let [gas-names (into [] (.getGasNamesList multigasReqDO))
+        _ (debugf "gas names: %s\n" gas-names)
+        graph-line (first (map #(.getGraphLine multigasReqDO %) gas-names))
+        _ (debugf "graph-line: %s\n" graph-line)
+        _ (debugf "graph-line size: %s\n" (.size graph-line))
+        points (mapv #(.getGraphPoint graph-line %) (range (.size graph-line)))]
+    points))
+
+(defn get-points [?data session]
   (let [{:keys [start-time-str end-time-str metric-name display-name]} ?data
-        ;startTimeStr "21_08_2010__09_08_02.948"
-        ;endTimeStr "21_08_2010__09_10_36.794"
-        ;metricName "Oxygen"
-        ;displayName "Greens Garage"
-        res (.requestGraphLine @smartgas_ start-time-str end-time-str
+        multigasReqDO (.requestGraphLine @graph-line_ start-time-str end-time-str
                                (Utils/formList metric-name)
-                               display-name (SeaLogger/format (Date.)) nil)]
+                               display-name (SeaLogger/format (Date.)) session)
+        ]
+    (multigas->out multigasReqDO)))
+
+(defn authenticate [user-id pass-id]
+  (let [res (.getUserDetails (.getUserDetails @user-details_ user-id (.getRoleEnumCRO @role-factory_) "web" false))]
     res))
 
 (defmethod -event-msg-handler
   :example/points
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [session (:session ring-req)
-        uid     (:uid     session)]
-    (debugf "points: %s\n" ?data)
+        uid     (:uid     session)
+        sesh    (:smartgas-session session)]
+    (debugf "session: %s\n" session)
+    (debugf "uid: %s\n" uid)
     (when ?reply-fn
-      (?reply-fn {:some-reply (get-points ?data)}))))
+      (?reply-fn {:some-reply (get-points ?data sesh)}))))
+
+(defn login-handler
+  "Here's where you'll add your server-side login/auth procedure (Friend, etc.).
+  In our simplified example we'll just always successfully authenticate the user
+  with whatever user-id they provided in the auth request."
+  [ring-req]
+  (let [{:keys [session params]} ring-req
+        {:keys [user-id pass-id]} params
+        res (authenticate user-id pass-id)]
+    (debugf "Login request: %s" params)
+    ;(let [resp (.getUserDetails @user-details_ nil nil nil nil)])
+    {:status 200 :session (assoc session :uid user-id :smartgas-session (.getSessionId res))}))
 
 ;; TODO Add your (defmethod -event-msg-handler <event-id> [ev-msg] <body>)s here...
 
 ;;;; Sente event router (our `event-msg-handler` loop)
+
+(defroutes ring-routes
+           (GET  "/"      ring-req (landing-pg-handler            ring-req))
+           (GET  "/chsk"  ring-req (ring-ajax-get-or-ws-handshake ring-req))
+           (POST "/chsk"  ring-req (ring-ajax-post                ring-req))
+           (POST "/login" ring-req (login-handler                 ring-req))
+           (route/resources "/") ; Static files, notably public/main.js (our cljs target)
+           (route/not-found "<h1>Page not found</h1>"))
+
+(def main-ring-handler
+  "**NB**: Sente requires the Ring `wrap-params` + `wrap-keyword-params`
+  middleware to work. These are included with
+  `ring.middleware.defaults/wrap-defaults` - but you'll need to ensure
+  that they're included yourself if you're not using `wrap-defaults`."
+  (ring.middleware.defaults/wrap-defaults
+    ring-routes ring.middleware.defaults/site-defaults))
 
 (defonce router_ (atom nil))
 (defn  stop-router! [] (when-let [stop-f @router_] (stop-f)))
@@ -211,8 +236,7 @@
 (defn stop!  []  (stop-router!)  (stop-web-server!))
 (defn start! [] (start-router!) (start-web-server!)
   ;(start-example-broadcaster!)
-  (start-smartgas)
-  )
+  (start-smartgas-servers))
 ;; (defonce _start-once (start!))
 
 (defn -main "For `lein run`, etc." [] (start!))

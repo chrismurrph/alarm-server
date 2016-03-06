@@ -1,0 +1,20 @@
+<project name="jar_logconfig" default="jar_logconfig">
+
+<property name="dist.dir" value="C://deploy"/>
+<property name="dist.file" value="${dist.dir}/SC-LogConfig.jar"/>
+<property name="out.root" value="C://dev//alarm-server//classes"/>
+
+<target name="jar_logconfig">
+  <tstamp>
+    <format property="TODAY" pattern="dd/MM/yyyy hh:mm aa" locale="au"/>
+  </tstamp>
+  <delete file="${dist.file}" quiet="true"/>
+  <jar destfile="${dist.file}">
+    <fileset dir="${out.root}" includes="log4j.properties"/>
+    <manifest>
+      <attribute name="Date-Created" value="${TODAY}"/>
+    </manifest> 
+  </jar>
+</target>
+
+</project>
