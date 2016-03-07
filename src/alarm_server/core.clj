@@ -62,9 +62,13 @@
     [:h2 "Step 3: try login with a user-id"]
     [:p  "The server can use this id to send events to *you* specifically."]
     [:p
+     [:button#btn-login-1 {:type "button" :name "Chris"} "Chris login!"]
+     ]
+    [:p
      [:input#input-user-login {:type :text :placeholder "User-id"}]
      ;[:input#input-pass-login {:type :text :placeholder "Pass-id"}]
-     [:button#btn-login {:type "button"} "Secure login!"]]
+     [:button#btn-login-2 {:type "button"} "Secure login!"]
+     ]
     ;;
     [:hr]
     [:h2 "Step 4: want to re-randomize Ajax/WebSocket connection type?"]

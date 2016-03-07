@@ -21,7 +21,6 @@
   :plugins
   [[lein-pprint "1.1.2"]
    [lein-ancient "0.6.8"]
-   ;[com.cemerick/austin "0.1.6"]
    [lein-cljsbuild "1.1.2"]
    ]
 
