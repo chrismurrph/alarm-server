@@ -102,26 +102,48 @@
 
 (defonce domain-factory_ (atom nil))
 (defonce role-factory_ (atom nil))
-(defonce smartgas_ (atom nil))
-(defonce graph-line_ (atom nil))
-(defonce user-details_ (atom nil))
+(defonce smartgas-server_ (atom nil))
+(defonce graph-line-server_ (atom nil))
+(defonce user-details-server_ (atom nil))
 (defn start-smartgas-servers []
   (reset! domain-factory_ (DomainSession/getDomainFactoryInstance))
   (reset! role-factory_ (DomainSession/getRoleEnumFactoryInstance))
-  (reset! smartgas_ (SmartgasServer. (HashMap.)))
-  (reset! graph-line_ (GraphLineServer. @smartgas_))
-  (reset! user-details_ (UserDetailsServer. @smartgas_))
-  )
+  (reset! smartgas-server_ (SmartgasServer. (HashMap.)))
+  (reset! graph-line-server_ (GraphLineServer. @smartgas-server_))
+  (reset! user-details-server_ (UserDetailsServer. @smartgas-server_)))
 
-(defn multigas->out [multigasReqDO]
+(defn multigas->out
+  "There should only be one line, but retrieve all its points"
+  [multigasReqDO]
   (let [gas-names (into [] (.getGasNamesList multigasReqDO))
         ;_ (debugf "gas names: %s\n" gas-names)
-        ;_ (assert (= 1 (count gas-names)) "Expect client to only ask for one gas name at a time")
+        _ (assert (= 1 (count gas-names)) "Expect client to only ask for one gas name at a time")
         graph-line (first (map #(.getGraphLine multigasReqDO %) gas-names))
         ;_ (debugf "graph-line: %s\n" graph-line)
         ;_ (debugf "graph-line size: %s\n" (.size graph-line))
         ]
     (map #(.getGraphPoint graph-line %) (range (.size graph-line)))))
+
+(defn new-type-from-old [old-type-val]
+  ;(debugf "TRANSFORM a %s" old-type-val)
+  (let [name (.getName old-type-val)
+        new-val (case name
+                  "Ten Minutely" :ten-mintely
+                  "Hourly" :hourly
+                  "Minutely" :minutely)]
+    new-val))
+
+(defn simplify-type [in-map]
+  (let [existing-type (:type in-map)
+        new-type (new-type-from-old existing-type)]
+    (assoc in-map :type new-type)))
+
+(defn make-as-expected
+  "At the moment the client only wants to see val and time"
+  [in-map]
+  (let [{:keys [maxVal minVal maxValTimeStr minValTimeStr]} in-map
+        _ (assert (and (nil? maxVal) (nil? minVal) (nil? maxValTimeStr) (nil? minValTimeStr)) "In T/B only expect to see avgVal, which is an actual reading")])
+  (assoc (dissoc in-map :maxVal :minVal :avgVal :sampleTimeStr :maxValTimeStr :minValTimeStr) :val (:avgVal in-map) :time (:sampleTimeStr in-map)))
 
 ;(defn points->data [points]
 ;  (debugf "points: %s" points)
@@ -129,17 +151,21 @@
 
 (defn get-points [?data session]
   (let [{:keys [start-time-str end-time-str metric-name display-name]} ?data
-        multigasReqDO (.requestGraphLine @graph-line_ start-time-str end-time-str
+        multigasReqDO (.requestGraphLine @graph-line-server_ start-time-str end-time-str
                                          (Utils/formList metric-name)
                                          display-name (SeaLogger/format (Date.)) session)
         ]
-    (as-> multigasReqDO $
-          (multigas->out $)
-          (map bean $)
-          (map #(u/unselect-keys % [:class]) $))))
+    (->> (multigas->out multigasReqDO)
+         (map bean)
+         (map #(u/unselect-keys % [:class]))
+         (map simplify-type)
+         (map make-as-expected)
+         (filter #(:val %))
+         (vec)
+         )))
 
 (defn authenticate [user-id pass-id]
-  (let [res (.getUserDetails (.getUserDetails @user-details_ user-id (.getRoleEnumCRO @role-factory_) "web" false))]
+  (let [res (.getUserDetails (.getUserDetails @user-details-server_ user-id (.getRoleEnumCRO @role-factory_) "web" false))]
     res))
 
 (defmethod -event-msg-handler
@@ -216,18 +242,6 @@
              (broadcast! i)
              (recur (inc i)))))
 
-(defn test-fast-server>user-pushes
-  "Quickly pushes 100 events to all connected users. Note that this'll be
-  fast+reliable even over Ajax!"
-  []
-  (doseq [uid (:any @connected-uids)]
-    (doseq [i (range 100)]
-      (chsk-send! uid [:fast-push/is-fast (str "hello " i "!!")]))))
-
-(comment (test-fast-server>user-pushes))
-
-;;;; Init stuff
-
 (defonce    web-server_ (atom nil)) ; {:server _ :port _ :stop-fn (fn [])}
 (defn  stop-web-server! [] (when-let [m @web-server_] ((:stop-fn m))))
 (defn start-web-server! [& [port]]
@@ -245,12 +259,8 @@
 
 (defn stop!  []  (stop-router!)  (stop-web-server!))
 (defn start! [] (start-router!) (start-web-server!)
-  ;(start-example-broadcaster!)
   (start-smartgas-servers))
+
 ;; (defonce _start-once (start!))
 
 (defn -main "For `lein run`, etc." [] (start!))
-
-(comment
-  (start!)
-  (test-fast-server>user-pushes))
