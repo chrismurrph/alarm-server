@@ -2,9 +2,11 @@
   (:gen-class)
 
   (import (java.util Date HashMap)
-          (com.cmts.server.business SmartgasServer GraphLineServer UserDetailsServer)
+          (com.cmts.server.business SmartgasServer GraphLineServer UserDetailsServer AuthenticationUserDetailsGetter)
           (com.seasoft.alarmer.common.domain DomainSession)
-          (com.seasoft.common.utils Utils SeaLogger))
+          (com.seasoft.common.utils Utils SeaLogger)
+          (org.springframework.security.authentication UsernamePasswordAuthenticationToken)
+          (com.seasoft.common.store ClientAuthenticationHolder))
 
   (:require
     [clojure.string     :as str]
@@ -19,9 +21,8 @@
 
     [org.httpkit.server :as http-kit]
     [taoensso.sente.server-adapters.http-kit :refer (sente-web-server-adapter)]
-    ;; Optional, for Transit encoding:
-    ;[taoensso.sente.packers.transit :as sente-transit]
-    [alarm-server.util :as u]))
+    [alarm-server.util :as u]
+    [alarm-server.convert :as conv]))
 
 (defn start-selected-web-server! [ring-handler port]
   (infof "Starting http-kit...")
@@ -30,10 +31,7 @@
      :port    (:local-port (meta stop-fn))
      :stop-fn (fn [] (stop-fn :timeout 100))}))
 
-(let [;; Serializtion format, must use same val for client + server:
-      packer :edn ; Default packer, a good choice in most cases
-      ;; (sente-transit/get-flexi-packer :edn) ; Experimental, needs Transit dep
-
+(let [packer :edn
       {:keys [ch-recv send-fn ajax-post-fn ajax-get-or-ws-handshake-fn
               connected-uids]}
       (sente/make-channel-socket-server! sente-web-server-adapter
@@ -101,57 +99,23 @@
   :chsk/ws-ping 
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [session (:session ring-req)
-        uid     (:uid     session)]
-    (debugf "Ignoring event: %s" event)))
+        uid (:uid session)]
+    ;(debugf "Ignoring event: %s" event)
+    ))
 
 (defonce domain-factory_ (atom nil))
 (defonce role-factory_ (atom nil))
 (defonce smartgas-server_ (atom nil))
+(defonce auth-server_ (atom nil))
 (defonce graph-line-server_ (atom nil))
 (defonce user-details-server_ (atom nil))
 (defn start-smartgas-servers []
   (reset! domain-factory_ (DomainSession/getDomainFactoryInstance))
   (reset! role-factory_ (DomainSession/getRoleEnumFactoryInstance))
   (reset! smartgas-server_ (SmartgasServer. (HashMap.)))
+  (reset! auth-server_ (AuthenticationUserDetailsGetter. @smartgas-server_))
   (reset! graph-line-server_ (GraphLineServer. @smartgas-server_))
   (reset! user-details-server_ (UserDetailsServer. @smartgas-server_)))
-
-(defn multigas->out
-  "There should only be one line, but retrieve all its points"
-  [multigasReqDO]
-  (let [gas-names (into [] (.getGasNamesList multigasReqDO))
-        ;_ (debugf "gas names: %s\n" gas-names)
-        _ (assert (= 1 (count gas-names)) "Expect client to only ask for one gas name at a time")
-        graph-line (first (map #(.getGraphLine multigasReqDO %) gas-names))
-        ;_ (debugf "graph-line: %s\n" graph-line)
-        ;_ (debugf "graph-line size: %s\n" (.size graph-line))
-        ]
-    (map #(.getGraphPoint graph-line %) (range (.size graph-line)))))
-
-(defn new-type-from-old [old-type-val]
-  ;(debugf "TRANSFORM a %s" old-type-val)
-  (let [name (.getName old-type-val)
-        new-val (case name
-                  "Ten Minutely" :ten-mintely
-                  "Hourly" :hourly
-                  "Minutely" :minutely)]
-    new-val))
-
-(defn simplify-type [in-map]
-  (let [existing-type (:type in-map)
-        new-type (new-type-from-old existing-type)]
-    (assoc in-map :type new-type)))
-
-(defn make-as-expected
-  "At the moment the client only wants to see val and time"
-  [in-map]
-  (let [{:keys [maxVal minVal maxValTimeStr minValTimeStr]} in-map
-        _ (assert (and (nil? maxVal) (nil? minVal) (nil? maxValTimeStr) (nil? minValTimeStr)) "In T/B only expect to see avgVal, which is an actual reading")])
-  (assoc (dissoc in-map :maxVal :minVal :avgVal :sampleTimeStr :maxValTimeStr :minValTimeStr) :val (:avgVal in-map) :time (:sampleTimeStr in-map)))
-
-;(defn points->data [points]
-;  (debugf "points: %s" points)
-;  (mapv bean points))
 
 (defn get-points [?data session]
   (let [{:keys [start-time-str end-time-str metric-name display-name]} ?data
@@ -159,18 +123,34 @@
                                          (Utils/formList metric-name)
                                          display-name (SeaLogger/format (Date.)) session)
         ]
-    (->> (multigas->out multigasReqDO)
+    (->> (conv/multigas->out multigasReqDO)
          (map bean)
          (map #(u/unselect-keys % [:class]))
-         (map simplify-type)
-         (map make-as-expected)
+         (map conv/simplify-type)
+         (map conv/make-as-expected)
          (filter #(:val %))
          (vec)
          )))
 
-(defn authenticate [user-id pass-id]
-  (let [res (.getUserDetails (.getUserDetails @user-details-server_ user-id (.getRoleEnumCRO @role-factory_) "web" false))]
-    res))
+;;
+;; Authentication authObject = new UsernamePasswordAuthenticationToken( username, password);
+;; Err.pr( AppNote.AUTHENTICATION, "Authentication object created: " + authObject);
+;; ClientAuthenticationHolder.getInstance().setServiceAuthentication( authObject);
+;;
+(defn prevent-403 [user-id pass-id]
+  (let [authObject (UsernamePasswordAuthenticationToken. user-id pass-id)
+        authHolder (ClientAuthenticationHolder/getInstance)
+        _ (.setServiceAuthentication authHolder authObject)]))
+
+(defn auth [user-id pass-id]
+  (let [_ (prevent-403 user-id pass-id)
+        auth-res (.loadUserByUsername @auth-server_ user-id)
+        authentic? (= pass-id (.getPassword auth-res))]
+    (if (not authentic?)
+      {:status 404 :uid user-id}
+      (let [res (.getUserDetails (.getUserDetails @user-details-server_ user-id (.getRoleEnumCRO @role-factory_) "web" false))
+            sess (.getSessionId res)]
+        {:status 200 :smartgas-session sess :uid user-id}))))
 
 (defmethod -event-msg-handler
   :example/points
@@ -190,11 +170,11 @@
   [ring-req]
   (let [{:keys [session params]} ring-req
         {:keys [user-id pass-id]} params
-        _ (debugf "Abt to authenticate %s" user-id)
-        res (authenticate user-id pass-id)]
-    (debugf "Login request: %s" params)
+        _ (debugf "Abt to authenticate %s, %s" user-id pass-id)
+        auth-response (auth user-id pass-id)]
+    (debugf "Login RESPONSE: %s" auth-response)
     ;(let [resp (.getUserDetails @user-details_ nil nil nil nil)])
-    {:status 200 :session (assoc session :uid user-id :smartgas-session (.getSessionId res))}))
+    (merge session auth-response)))
 
 ;; TODO Add your (defmethod -event-msg-handler <event-id> [ev-msg] <body>)s here...
 

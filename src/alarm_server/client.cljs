@@ -115,7 +115,7 @@
   (->output! "Assuming ok, but got back: %s" ajax-resp)
   true)
 
-(defn login-process [user-id]
+(defn login-process [user-id pass-id]
   (if (str/blank? user-id)
     (js/alert "Please enter a user-id first")
     (do
@@ -129,7 +129,7 @@
       (sente/ajax-lite "/login"
                        {:method :post
                         :headers {:X-CSRF-Token (:csrf-token @chsk-state)}
-                        :params  {:user-id (str user-id) :pass-id (str user-id)}}
+                        :params  {:user-id (str user-id) :pass-id (str pass-id)}}
 
                        (fn [ajax-resp]
                          (->output! "Ajax login response: %s" ajax-resp)
@@ -144,7 +144,7 @@
 (when-let [target-el (.getElementById js/document "btn-login-1")]
   (.addEventListener target-el "click"
                      (fn [ev]
-                       (login-process (.-name target-el)))))
+                       (login-process (.-name target-el) "Murphy"))))
 
 (when-let [target-el (.getElementById js/document "btn-login-2")]
   (.addEventListener target-el "click"
@@ -152,7 +152,7 @@
       (let [user-id (.-value (.getElementById js/document "input-user-login"))
             ;pass-id (.-value (.getElementById js/document "input-pass-login"))
             ]
-        (login-process user-id)))))
+        (login-process user-id nil)))))
 
 ;;;; Init stuff
 
