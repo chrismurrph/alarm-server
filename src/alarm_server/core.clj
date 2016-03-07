@@ -6,7 +6,8 @@
           (com.seasoft.alarmer.common.domain DomainSession)
           (com.seasoft.common.utils Utils SeaLogger)
           (org.springframework.security.authentication UsernamePasswordAuthenticationToken)
-          (com.seasoft.common.store ClientAuthenticationHolder))
+          (com.seasoft.common.store ClientAuthenticationHolder)
+          (org.springframework.security.core.userdetails UsernameNotFoundException))
 
   (:require
     [clojure.string     :as str]
@@ -60,11 +61,12 @@
     [:h2 "Step 3: try login with a user-id"]
     [:p  "The server can use this id to send events to *you* specifically."]
     [:p
+     [:input#input-pass-login-1 {:type :text :placeholder "Pass-id"}]
      [:button#btn-login-1 {:type "button" :name "Chris"} "Chris login!"]
      ]
     [:p
-     [:input#input-user-login {:type :text :placeholder "User-id"}]
-     ;[:input#input-pass-login {:type :text :placeholder "Pass-id"}]
+     [:input#input-user-login-2 {:type :text :placeholder "User-id"}]
+     [:input#input-pass-login-2 {:type :text :placeholder "Pass-id"}]
      [:button#btn-login-2 {:type "button"} "Secure login!"]
      ]
     ;;
@@ -133,19 +135,29 @@
          )))
 
 ;;
-;; Authentication authObject = new UsernamePasswordAuthenticationToken( username, password);
-;; Err.pr( AppNote.AUTHENTICATION, "Authentication object created: " + authObject);
-;; ClientAuthenticationHolder.getInstance().setServiceAuthentication( authObject);
+;; With this we are using Spring authentication the same way existing server code does. This
+;; must be where seeing if the user is in the database. How to interrogate the db (user table
+;; and its fields) must be specified in an XML file. Hmm - but there are no Spring XML files in
+;; the uberjar, so must be in Java code somewhere. Well auth-server_ is an instance of a
+;; subclass of a Spring security class, so that must be it. I have no idea the mechanism 403 gets
+;; returned with, but it does. Just don't do this call and you will see it in the Chrome browser.
 ;;
 (defn prevent-403 [user-id pass-id]
   (let [authObject (UsernamePasswordAuthenticationToken. user-id pass-id)
         authHolder (ClientAuthenticationHolder/getInstance)
         _ (.setServiceAuthentication authHolder authObject)]))
 
+;;
+;; Catch the exception and return nil if the user doesn't exist.
+;;
+(defn load-user [auth-server user-id]
+  (try (.loadUserByUsername auth-server user-id)
+       (catch UsernameNotFoundException _ nil)))
+
 (defn auth [user-id pass-id]
   (let [_ (prevent-403 user-id pass-id)
-        auth-res (.loadUserByUsername @auth-server_ user-id)
-        authentic? (= pass-id (.getPassword auth-res))]
+        auth-res (load-user @auth-server_ user-id)
+        authentic? (and auth-res (= pass-id (.getPassword auth-res)))]
     (if (not authentic?)
       {:status 404 :uid user-id}
       (let [res (.getUserDetails (.getUserDetails @user-details-server_ user-id (.getRoleEnumCRO @role-factory_) "web" false))

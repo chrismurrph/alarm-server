@@ -144,15 +144,16 @@
 (when-let [target-el (.getElementById js/document "btn-login-1")]
   (.addEventListener target-el "click"
                      (fn [ev]
-                       (login-process (.-name target-el) "Murphy"))))
+                       (let [pass-id (.-value (.getElementById js/document "input-pass-login-1"))]
+                         (login-process (.-name target-el) pass-id)))))
 
 (when-let [target-el (.getElementById js/document "btn-login-2")]
   (.addEventListener target-el "click"
-    (fn [ev]
-      (let [user-id (.-value (.getElementById js/document "input-user-login"))
-            ;pass-id (.-value (.getElementById js/document "input-pass-login"))
-            ]
-        (login-process user-id nil)))))
+                     (fn [ev]
+                       (let [user-id (.-value (.getElementById js/document "input-user-login-2"))
+                             pass-id (.-value (.getElementById js/document "input-pass-login-2"))
+                             ]
+                         (login-process user-id pass-id)))))
 
 ;;;; Init stuff
 

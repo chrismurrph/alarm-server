@@ -37,6 +37,7 @@
      :source-paths ["src"]
      :compiler     {:output-to     "resources/public/main.js"
                     :optimizations :whitespace #_:advanced
+                    :parallel-build true
                     :pretty-print  true}}]}
 
   :aot [alarm-server.core]
