@@ -5,7 +5,7 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
                  [org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.7.170"]
+                 [org.clojure/clojurescript "1.7.228"]
                  [org.clojure/core.async "0.2.374"]
                  [com.taoensso/sente "1.8.0"]               ; <--- Sente
                  [com.taoensso/timbre "4.3.0"]
@@ -23,6 +23,9 @@
    [lein-ancient "0.6.8"]
    [lein-cljsbuild "1.1.2"]
    ]
+
+  ;; This won't help b/c it is the default. Sometimes need to manually delete resources/public/main.js
+  :clean-targets [:target-path "target"]
 
   :java-source-paths ["java/src"]
 

@@ -109,15 +109,16 @@
           :end-time-str "07_03_2016__09_10_36.794"
           :metric-name "Oxygen"
           :display-name "Shed Tube 10"}] 5000
-        (fn [cb-reply] (comment (->output! "Callback reply: %s" cb-reply)))))))
+        (fn [cb-reply] (->output! "Callback reply: %s" cb-reply))))))
 
 (defn authentication? [ajax-resp]
-  (->output! "Assuming ok, but got back: %s" ajax-resp)
-  true)
+  (let [okay? (:success? ajax-resp)]
+    (->output! "Got back: %s" okay?)
+    okay?))
 
 (defn login-process [user-id pass-id]
-  (if (str/blank? user-id)
-    (js/alert "Please enter a user-id first")
+  (if (or (str/blank? user-id) (str/blank? pass-id))
+    (js/alert "Please enter user-id and pass-id first")
     (do
       (->output! "Logging in with user-id %s" user-id)
 
@@ -133,8 +134,7 @@
 
                        (fn [ajax-resp]
                          (->output! "Ajax login response: %s" ajax-resp)
-                         (let [login-successful? (authentication? ajax-resp) ; Your logic here
-                               ]
+                         (let [login-successful? (authentication? ajax-resp)]
                            (if-not login-successful?
                              (->output! "Login failed")
                              (do

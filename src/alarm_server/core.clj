@@ -7,7 +7,8 @@
           (com.seasoft.common.utils Utils SeaLogger)
           (org.springframework.security.authentication UsernamePasswordAuthenticationToken)
           (com.seasoft.common.store ClientAuthenticationHolder)
-          (org.springframework.security.core.userdetails UsernameNotFoundException))
+          (org.springframework.security.core.userdetails UsernameNotFoundException)
+          (com.cmts.common.service UserDetails))
 
   (:require
     [clojure.string     :as str]
@@ -86,7 +87,11 @@
 (defn event-msg-handler
   "Wraps `-event-msg-handler` with logging, error catching, etc."
   [{:as ev-msg :keys [id ?data event]}]
-  (-event-msg-handler ev-msg))
+  (let [sg-sess (-> ev-msg :ring-req :session :uid)
+        _ (debugf "Asking to do %s FOR %s" id (-> ev-msg :ring-req :session :uid))]
+    (if sg-sess
+      (-event-msg-handler ev-msg)
+      {:status 404})))
 
 (defmethod -event-msg-handler
   :default ; Default/fallback case (no other matching handler)
@@ -154,26 +159,25 @@
   (try (.loadUserByUsername auth-server user-id)
        (catch UsernameNotFoundException _ nil)))
 
-(defn auth [user-id pass-id]
+(defn auth [session user-id pass-id]
   (let [_ (prevent-403 user-id pass-id)
         auth-res (load-user @auth-server_ user-id)
-        authentic? (and auth-res (= pass-id (.getPassword auth-res)))]
-    (if (not authentic?)
-      {:status 404 :uid user-id}
-      (let [res (.getUserDetails (.getUserDetails @user-details-server_ user-id (.getRoleEnumCRO @role-factory_) "web" false))
-            sess (.getSessionId res)]
-        {:status 200 :smartgas-session sess :uid user-id}))))
+        authentic? (and auth-res (= pass-id (.getPassword auth-res)))
+        res (if (not authentic?)
+              {:status 404 :session session}
+              (let [res (.getUserDetails (.getUserDetails @user-details-server_ user-id (.getRoleEnumCRO @role-factory_) (UserDetails/SMARTGAS_CLIENT_APP) false))
+                    sg-sess (.getSessionId res)]
+                {:status 200 :session (assoc session :uid sg-sess)}))
+        _ (debugf "Login RESPONSE: %s" res)]
+    res))
 
 (defmethod -event-msg-handler
   :example/points
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
-  (let [session (:session ring-req)
-        uid     (:uid     session)
-        sesh    (:smartgas-session session)]
-    (debugf "session: %s\n" session)
-    (debugf "uid: %s\n" uid)
+  (let [uid (get-in ring-req [:session :uid])]
+    (debugf "session: %s\n" uid)
     (when ?reply-fn
-      (?reply-fn {:some-reply (get-points ?data sesh)}))))
+      (?reply-fn {:some-reply (get-points ?data uid)}))))
 
 (defn login-handler
   "Here's where you'll add your server-side login/auth procedure (Friend, etc.).
@@ -182,11 +186,10 @@
   [ring-req]
   (let [{:keys [session params]} ring-req
         {:keys [user-id pass-id]} params
-        _ (debugf "Abt to authenticate %s, %s" user-id pass-id)
-        auth-response (auth user-id pass-id)]
-    (debugf "Login RESPONSE: %s" auth-response)
-    ;(let [resp (.getUserDetails @user-details_ nil nil nil nil)])
-    (merge session auth-response)))
+        sg-sess (-> session :uid)
+        _ (debugf "Abt to authenticate %s, %s, SESS (only if this nil): %s" user-id pass-id sg-sess)
+        auth-response (if sg-sess {:status 200 :session (assoc session :uid sg-sess)} (auth session user-id pass-id))]
+    auth-response))
 
 ;; TODO Add your (defmethod -event-msg-handler <event-id> [ev-msg] <body>)s here...
 
@@ -200,11 +203,6 @@
            (route/resources "/") ; Static files, notably public/main.js (our cljs target)
            (route/not-found "<h1>Page not found</h1>"))
 
-(defn my-middleware [handler]
-  (fn [request]
-    (debugf "MIDDLE REQ: %s" request)
-    request))
-
 (def main-ring-handler
   "**NB**: Sente requires the Ring `wrap-params` + `wrap-keyword-params`
   middleware to work. These are included with
@@ -212,7 +210,6 @@
   that they're included yourself if you're not using `wrap-defaults`."
   (-> ring-routes
       (ring.middleware.defaults/wrap-defaults ring.middleware.defaults/site-defaults)
-      ;(my-middleware)
       ))
 
 (defonce router_ (atom nil))
