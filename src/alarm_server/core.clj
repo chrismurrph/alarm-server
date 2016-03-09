@@ -200,13 +200,20 @@
            (route/resources "/") ; Static files, notably public/main.js (our cljs target)
            (route/not-found "<h1>Page not found</h1>"))
 
+(defn my-middleware [handler]
+  (fn [request]
+    (debugf "MIDDLE REQ: %s" request)
+    request))
+
 (def main-ring-handler
   "**NB**: Sente requires the Ring `wrap-params` + `wrap-keyword-params`
   middleware to work. These are included with
   `ring.middleware.defaults/wrap-defaults` - but you'll need to ensure
   that they're included yourself if you're not using `wrap-defaults`."
-  (ring.middleware.defaults/wrap-defaults
-    ring-routes ring.middleware.defaults/site-defaults))
+  (-> ring-routes
+      (ring.middleware.defaults/wrap-defaults ring.middleware.defaults/site-defaults)
+      ;(my-middleware)
+      ))
 
 (defonce router_ (atom nil))
 (defn  stop-router! [] (when-let [stop-f @router_] (stop-f)))

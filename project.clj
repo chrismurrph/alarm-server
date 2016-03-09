@@ -1,5 +1,5 @@
 (defproject alarm-server "0.1.0-SNAPSHOT"
-  :description "Server for om-alarming. Intended to not work unless you have the right jar files"
+  :description "Server for om-alarming."
   :url "http://seasoft.com"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
@@ -15,7 +15,7 @@
                  [compojure "1.4.0"]                        ; Or routing lib of your choice
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.237"]
-                 [local/smartgas-uber "1.0"]
+                 [smartgas-deps "1.0.0"]
                  ]
 
   :plugins
