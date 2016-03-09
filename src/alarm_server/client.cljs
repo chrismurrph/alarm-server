@@ -141,6 +141,17 @@
                                (->output! "Login successful")
                                (sente/chsk-reconnect! chsk)))))))))
 
+(when-let [target-el (.getElementById js/document "btnlogout")]
+  (.addEventListener target-el "click"
+                     (fn [ev]
+                       (->output! "Logout was clicked")
+                       (sente/ajax-lite "/logout"
+                                        {:method :post
+                                         :headers {:X-CSRF-Token (:csrf-token @chsk-state)}}
+                                        (fn [ajax-resp]
+                                          (->output! "Ajax logout response: %s" ajax-resp)
+                                          (sente/chsk-reconnect! chsk))))))
+
 (when-let [target-el (.getElementById js/document "btn-login-1")]
   (.addEventListener target-el "click"
                      (fn [ev]

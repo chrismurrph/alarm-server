@@ -70,6 +70,9 @@
      [:input#input-pass-login-2 {:type :text :placeholder "Pass-id"}]
      [:button#btn-login-2 {:type "button"} "Secure login!"]
      ]
+    [:p
+     [:button#btnlogout {:type "button"} "LOG OUT"]
+     ]
     ;;
     [:hr]
     [:h2 "Step 4: want to re-randomize Ajax/WebSocket connection type?"]
@@ -164,7 +167,7 @@
         auth-res (load-user @auth-server_ user-id)
         authentic? (and auth-res (= pass-id (.getPassword auth-res)))
         res (if (not authentic?)
-              {:status 404 :session session}
+              {:status 404 :session (assoc session :uid nil)}
               (let [res (.getUserDetails (.getUserDetails @user-details-server_ user-id (.getRoleEnumCRO @role-factory_) (UserDetails/SMARTGAS_CLIENT_APP) false))
                     sg-sess (.getSessionId res)]
                 {:status 200 :session (assoc session :uid sg-sess)}))
@@ -175,10 +178,19 @@
   :example/points
   [{:as ev-msg :keys [event id ?data ring-req ?reply-fn send-fn]}]
   (let [uid (get-in ring-req [:session :uid])]
-    (debugf "session: %s\n" uid)
+    (debugf "uid when points: %s\n" uid)
     (when ?reply-fn
       (?reply-fn {:some-reply (get-points ?data uid)}))))
 
+(defn logout-handler
+  [ring-req]
+  {:status 200 :session (assoc (:session ring-req) :uid nil)})
+
+;;
+;; Logging in again is supposed to be idempotic - just keep returning true if already logged on.
+;; But we do this simply by seeing if there's a :uid, so user giving a different password won't
+;; be knocked out. Seems fair enough!
+;;
 (defn login-handler
   "Here's where you'll add your server-side login/auth procedure (Friend, etc.).
   In our simplified example we'll just always successfully authenticate the user
@@ -200,6 +212,7 @@
            (GET  "/chsk"  ring-req (ring-ajax-get-or-ws-handshake ring-req))
            (POST "/chsk"  ring-req (ring-ajax-post                ring-req))
            (POST "/login" ring-req (login-handler                 ring-req))
+           (POST "/logout" ring-req (logout-handler               ring-req))
            (route/resources "/") ; Static files, notably public/main.js (our cljs target)
            (route/not-found "<h1>Page not found</h1>"))
 
