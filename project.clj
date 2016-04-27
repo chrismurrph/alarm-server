@@ -15,7 +15,7 @@
                  [compojure "1.4.0"]                        ; Or routing lib of your choice
                  [com.cognitect/transit-clj "0.8.285"]
                  [com.cognitect/transit-cljs "0.8.237"]
-                 [smartgas-deps "1.0.0"]
+                 [enhanced-smartgas-deps "1.0.0"]
                  ]
 
   :plugins
